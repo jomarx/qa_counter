@@ -56,20 +56,22 @@ MySQL_Connection conn((Client *)&client);
 //LCD
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
-const char* ssid = "jomarAP-SP";
-const char* wpassword = "maquinay1";
+//const char* ssid = "jomarAP-SP";
+//const char* wpassword = "maquinay1";
 
-//const char* ssid = "outsourcing1.25s";
-//const char* wpassword = "dbafe12345!!!";
+const char* ssid = "outsourcing1.25s";
+const char* wpassword = "dbafe12345!!!";
 
 //buzzer
 const int buzzer = D8;
 
 //button
+const int AttFunctionButton = D5;
 const int startButton = D6;
 const int cancelButton = D7;
 int buttonState1 = 1;
 int buttonState2 = 1;
+
 
 //potentiometer selector
 int potPin = A0;
@@ -77,6 +79,8 @@ int potVal = 0;       // variable to store the potValue coming from the sensor
 
 
 void setup() {
+	
+	Serial.begin(9600);
 
 	Serial.println("Starting UDP");
 	udp.begin(localPort);
@@ -112,7 +116,6 @@ while (WiFi.status() != WL_CONNECTED) {
 
   //LCD init
   lcd.init();                      // initialize the lcd 
-  lcd.init();
   // Print a message to the LCD.
   lcd.backlight();
   lcd.setCursor(0,0);
@@ -159,8 +162,6 @@ while (conn.connect(server_addr, 3306, user, spassword) != true) {
   lcd.setCursor(0,0);
   lcd.print("SQL connected");
   delay(1000);
-	ClearLCD();
-	lcd.print("Please Scan ID");
 
 }
 
@@ -178,9 +179,7 @@ delay(1000);
 int cb = udp.parsePacket();
   if (!cb) {
 	  Serial.println("no packet yet");
-	  displayClear();
-	  display.print("\n");
-	  display.display();
+	  ClearLCD();
 	  } else {
       Serial.print("packet received, length=");
       Serial.println(cb);
@@ -247,19 +246,18 @@ int tz = 8;                                            // adjust for PH time
       if(nyr < 10) Serial.print(F("0")); Serial.println(nyr);          // print the year
       Serial.println();
 
-displayClear();
+ClearLCD();
 
-      if(nh < 10) display.print(F(" ")); display.print(nh);  display.print(F(":"));          // print the hour 
-      if(nm < 10) display.print(F("0")); display.print(nm);  display.print(F(":"));          // print the minute
-      if(ns < 10) display.print(F("0")); display.print(ns);                       // print the second
+      if(nh < 10) lcd.print(F(" ")); lcd.print(nh);  lcd.print(F(":"));	// print the hour 
+      if(nm < 10) lcd.print(F("0")); lcd.print(nm);						// print the minute
+      lcd.print(F(" - "));                                        		// Local date
+      if(nmo < 10) lcd.print(F("0")); lcd.print(nmo);  lcd.print(F("/"));	// print the month
+      if(ndy < 10) lcd.print(F("0")); lcd.print(ndy); lcd.print(F("/"));	// print the day
+      if(nyr < 10) lcd.print(F("0")); lcd.print(nyr);          				// print the year
+      
+	  lcd.setCursor(0,1);
+	  lcd.print("Press Start");
 
-      display.print(F(" - "));                                        // Local date
-      if(nmo < 10) display.print(F("0")); display.print(nmo);  display.print(F("/"));        // print the month
-      if(ndy < 10) display.print(F("0")); display.print(ndy); display.print(F("/"));                   // print the day
-      if(nyr < 10) display.print(F("0")); display.print(nyr);          // print the year
-      display.println();      
-
-display.display();
 //mod end
 }
 //NTP End
@@ -268,21 +266,7 @@ display.display();
 	buttonState1 = 1;
 	buttonState2 = 1;
 
-  receivedTag=false;
-  int TNLeaveLoop = 0;
-  int countToFive = 0;
-  int tempTimer = 0;
-  int cellLocation = 0;
-
-	delay (500);
-    Serial.print("Start loop / "); 
-	Serial.print(countToTwo); 
-	Serial.print(" / ");
-	Serial.print(countToloop); 
-	Serial.print(" \n ");
-	//lcd.noBacklight();
-
-  delay(400);
+  delay(10000);
   
   yield();
   
