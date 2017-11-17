@@ -75,12 +75,6 @@ Modified by: f41ardu for use with nodemcu
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-// If using software SPI (the default case):
-#define OLED_MOSI  D3 //D1
-#define OLED_CLK   D2   //D0
-#define OLED_DC    D5
-#define OLED_CS    D6
-#define OLED_RESET D4
 
 /* Create an instance for the SSD1306 OLED display in SPI mode 
  * connection scheme: 
@@ -98,9 +92,9 @@ Modified by: f41ardu for use with nodemcu
 
 
 //IPAddress server_addr(192,168,143,132); // IP of the MySQL server here
-IPAddress server_addr(192,168,42,146); // IP of the MySQL server here
-char user[] = "nodemcu1"; // MySQL user login username
-char password[] = "secret"; // MySQL user login password
+IPAddress server_addr(192,168,143,220); // IP of the MySQL server here
+char user[] = "jomar"; // MySQL user login username
+char password[] = "magic44ever"; // MySQL user login password
 
 // Sample query
 //char query[] = "SELECT population FROM world.city WHERE name = 'New York'";
@@ -117,13 +111,13 @@ MySQL_Connection conn((Client *)&client);
 
 
 //wifi
-//char ssid[] = "outsourcing1.25s"; // your SSID
-//char pass[] = "dbafe12345!!!"; // your SSID Password
-char ssid[] = "jomarAP-SP";  //  your network SSID (name)
-char pass[] = "maquinay1";       // your network password
+char ssid[] = "outsourcing1.25s"; // your SSID
+char pass[] = "dbafe12345!!"; // your SSID Password
+//char ssid[] = "jomarAP-SP";  //  your network SSID (name)
+//char pass[] = "maquinay1";       // your network password
 // const char* host = "utcnist2.colorado.edu";
-//const char* host = "128.138.141.172";
-const char* host = "192.168.42.185"; //laptop NTP server
+const char* host = "192.168.143.1";
+//const char* host = "192.168.42.185"; //laptop NTP server
 
 int ln = 0;
 String TimeDate = "";
@@ -157,21 +151,51 @@ WiFiUDP udp;
 
 //end NTP
 
-Adafruit_SSD1306 display(OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+//Adafruit_SSD1306 display(OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
 //buzzer
-const int buzzer = D8;
+const int buzzer = 15;
 
 //button
-const int startButton = D1;
-const int cancelButton = D7;
+const int startButton = 12;
+const int cancelButton = 13;
 int buttonState1 = 1;
 int buttonState2 = 1;
 
 //mechanic ID
 int mechanicID = 49;
 
+
+// Adafruit_NeoMatrix example for tiled NeoPixel matrices.  Scrolls
+// 'Howdy' across three 10x8 NeoPixel grids that were created using
+// NeoPixel 60 LEDs per meter flex strip.
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_NeoMatrix.h>
+#include <Adafruit_NeoPixel.h>
+#ifndef PSTR
+ #define PSTR // Make Arduino Due happy
+#endif
+
+#define PIN 5
+
+Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8, 8, 1, 1, PIN,
+  NEO_MATRIX_TOP + NEO_MATRIX_LEFT + NEO_MATRIX_ROWS + NEO_MATRIX_PROGRESSIVE,
+  NEO_GRB + NEO_KHZ400);
+
+const uint16_t colors[] = {
+  matrix.Color(255, 0, 0), matrix.Color(0, 255, 0), matrix.Color(0, 0, 255) };
+
+int x = matrix.width();
+int pass1 = 0;
+
 void setup(){  
+
+  matrix.begin();
+  matrix.setTextWrap(false);
+  matrix.setBrightness(40);
+  matrix.setTextColor(colors[0]);
+  Serial.begin(9600);
 
 pinMode(startButton, INPUT_PULLUP);
 pinMode(cancelButton, INPUT_PULLUP);
@@ -203,21 +227,8 @@ while (WiFi.status() != WL_CONNECTED) {
       }
 }
 
-display.begin(SSD1306_SWITCHCAPVCC);
-display.display();
-delayer(1);
-display.clearDisplay();
-display.setTextSize(1);
-display.setTextColor(WHITE);
-displayClear();
-  
 Serial.println("");
 
-displayClear();
-display.print("WIFI Connected!\n");
-display.print(WiFi.localIP());
-display.print("\n");
-display.display();
 
 Serial.println("WiFi connected");
 Serial.println("IP address: ");
@@ -232,8 +243,6 @@ Serial.println(udp.localPort());
  
 //start SQL DB connection
 Serial.println("DB - Connecting...");
-display.print("DB - Connecting\n");
-display.display();
 
 ResetCounter = 0;
 while (conn.connect(server_addr, 3306, user, password) != true) {
@@ -247,12 +256,12 @@ while (conn.connect(server_addr, 3306, user, password) != true) {
 		ESP.restart();
       }
     }
-    
-display.print("SQL connected!\n");
-display.display();
 }
 
 void loop(){
+	
+	matrix.fillScreen(0);
+	matrix.show();
 	
 	//NTP start
 	//get a random server from the pool
@@ -266,9 +275,7 @@ void loop(){
 	int cb = udp.parsePacket();
 	  if (!cb) {
 		  Serial.println("no packet yet");
-		  displayClear();
-		  display.print("\n");
-		  display.display();
+		  
 		  } else {
 		  Serial.print("packet received, length=");
 		  Serial.println(cb);
@@ -335,20 +342,6 @@ void loop(){
 		  if(nyr < 10) Serial.print(F("0")); Serial.println(nyr);          // print the year
 		  Serial.println();
 
-	displayClear();
-
-		  if(nh < 10) display.print(F(" ")); display.print(nh);  display.print(F(":"));          // print the hour 
-		  if(nm < 10) display.print(F("0")); display.print(nm);  display.print(F(":"));          // print the minute
-		  if(ns < 10) display.print(F("0")); display.print(ns);                       // print the second
-
-		  display.print(F(" - "));                                        // Local date
-		  if(nmo < 10) display.print(F("0")); display.print(nmo);  display.print(F("/"));        // print the month
-		  if(ndy < 10) display.print(F("0")); display.print(ndy); display.print(F("/"));                   // print the day
-		  if(nyr < 10) display.print(F("0")); display.print(nyr);          // print the year
-		  display.println();      
-
-	display.display();
-	//mod end
 	}
 	//NTP End
 
@@ -387,13 +380,9 @@ void loop(){
 
 	// Show the result
 	if (cellLocation == 0) {
-		display.print("No task,\n sleeping for 2mins");
 		Serial.println("No task,\n sleeping for 2mins");
-		display.display();
 		buzzerFunction(1);
 		delayer(1);
-		displayClear();
-		display.display();
 		delay(100);
 		ESP.deepSleep(60000000*2);
 		//sleep esp8266 for 2min
@@ -404,22 +393,25 @@ void loop(){
 //task detected
 
 Serial.println("Starting loop, printing initial display");
-displayClear();
-if(nh < 10) display.print(F(" ")); display.print(nh);  display.print(F(":"));          // print the hour 
-if(nm < 10) display.print(F("0")); display.print(nm);  display.print(F(":"));          // print the minute
-if(ns < 10) display.print(F("0")); display.print(ns);                       // print the second
-display.print(F(" - "));                                        // Local date
-if(nmo < 10) display.print(F("0")); display.print(nmo);  display.print(F("/"));        // print the month
-if(ndy < 10) display.print(F("0")); display.print(ndy); display.print(F("/"));                   // print the day
-if(nyr < 10) display.print(F("0")); display.print(nyr);          // print the year
-display.println();
-display.print("Cell Line #: ");
-display.print(cellLocation);
-display.print("\n");
-display.display();
-buzzerFunction(5);
 
-delayer(120);
+for (int looper = 0; looper<=1000; looper++){
+	Serial.print("start up! ");
+  matrix.fillScreen(0);
+  matrix.setCursor(0, 0);
+  matrix.print(cellLocation);
+  if(--x < -36) {
+    x = matrix.width();
+    if(++pass1 >= 3) pass1 = 0;
+    matrix.setTextColor(colors[pass1]);
+  }
+  matrix.show();
+  delay(100);
+  yield();
+}
+
+matrix.fillScreen(0);
+matrix.show();
+
 
 //SQL start
 //row_values *row = NULL;
@@ -434,16 +426,17 @@ sprintf(query, QUERY_UPDATE, taskID);
 cur_mem2->execute(query);
 Serial.print("value of char = ");
 Serial.println(query);
-delayer(5);
 //delete cur_mem;
 //conn.close();
 cellLocation = atol(row->values[1]);
 // SQL end
-
+yield();
 taskID = 0;
 cellLocation = 0;
 
 }
+
+
 
 int delayer(int dly){ //delay for x seconds
 	Serial.print("Delayer");
@@ -452,12 +445,6 @@ int delayer(int dly){ //delay for x seconds
 		Serial.print(DelayDaw);
 		Serial.print(".");
 	}
-}
-
-int displayClear() {
-display.clearDisplay();
-display.setCursor(0,0);
-display.display();
 }
 
 int buzzerFunction(int counter){
